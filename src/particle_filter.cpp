@@ -49,7 +49,7 @@ void ParticleFilter::init(double x, double y, double theta, double std[]) {
 		single_particle.x = dist_x(gen);
 		single_particle.y = dist_y(gen);
 		single_particle.theta = dist_theta(gen);
-		single_particle.weight = 1;
+		single_particle.weight = 1/num_particles;
 		particles.push_back(single_particle);
 	}
 
@@ -61,6 +61,7 @@ void ParticleFilter::prediction(double delta_t, double std_pos[], double velocit
 	// NOTE: When adding noise you may find std::normal_distribution and std::default_random_engine useful.
 	//  http://en.cppreference.com/w/cpp/numeric/random/normal_distribution
 	//  http://www.cplusplus.com/reference/random/default_random_engine/
+	
 
 }
 
