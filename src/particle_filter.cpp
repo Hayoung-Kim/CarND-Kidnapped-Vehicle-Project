@@ -95,6 +95,9 @@ void ParticleFilter::dataAssociation(std::vector<LandmarkObs> predicted, std::ve
 	// NOTE: this method will NOT be called by the grading code. But you will probably find it useful to 
 	//   implement this method and use it as a helper during the updateWeights phase.
 
+	// nearest neighbor data association
+
+
 }
 
 void ParticleFilter::updateWeights(double sensor_range, double std_landmark[], 
@@ -109,6 +112,78 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
 	//   and the following is a good resource for the actual equation to implement (look at equation 
 	//   3.33
 	//   http://planning.cs.uiuc.edu/node99.html
+
+	// parse std_landmark[]
+	double std_obsx = std_landmark[0];
+	double std_obsy = std_landmark[1];
+
+	vector<LandmarkObs> in_range_landmarks_;
+	vector<LandmarkObs> predicted;
+
+	for(int i=0; i<num_particles; i++){
+		
+
+		for(int l=0; l<map_landmarks.size(); l++){
+
+			// find landmarks closer than sensor range
+			double dx_ = particles[i].x - map_landmarks[l].x_f;
+			double dy_ = particles[i].y - map_landmarks[l].y_f;
+			double distance_ = sqrt(dx_*dx_ + dy_*dy_);
+
+			if(distance_ <= sensor_range){
+				LandmarkObs in_range_landmark;
+				in_range_landmark.id = map_landmarks[l].id_i;
+				in_range_landmark.x = map_landmarks[l].x_f;
+				in_range_landmark.y = map_landmarks[l].y_f;
+
+				in_range_landmarks_.push_back(in_range_landmark);
+			}
+
+		}
+
+		// predicted observation (global to vehicle coordinate)
+		for(int k=0; k<in_range_landmarks_.size(); k++){
+			LandmarkObs predicted_;
+
+			predicted_.id = in_range_landmarks_[k].id;
+			
+			double X_, Y_;
+			X_ = in_range_landmarks_[k].x_f - particles[i].x;
+			Y_ = in_range_landmarks_[k].y_f - particles[i].y;
+			
+			double cc, ss;
+			cc = cos(particles[i].theta);
+			ss = sin(particles[i].theta);
+
+			predicted_.x = X_ + X_ * cc - Y_ * ss;
+			predicted_.y = Y_ + X_ * ss + Y_ * cc;
+			
+			predicted.push_back(predicted_);
+		}
+
+		// data assosication
+		dataAssociation(predicted, observations)
+
+		// calculate multivariate gaussian probability
+		double mult_gaussian_prob;
+		double weight_ = 1.0;
+		for(int l=0; l<observations.size(); l++){
+			double e_x = predicted[l].x - observation[l].x;
+			double e_y = predicted[l].y - observation[l].y;
+			mult_gaussian_prob = exp(-1/2*(e_x/std_obsx + e_y/std_obsy));
+
+			weight_ *= mult_gaussian_prob;
+		}
+
+		particles[i].weight = weight_;
+		weights.push_back(weight_);
+		
+
+		
+		// clear vector to update next particle.
+		in_range_landmarks_.clear();
+		predicted.clear();
+	}
 }
 
 void ParticleFilter::resample() {
