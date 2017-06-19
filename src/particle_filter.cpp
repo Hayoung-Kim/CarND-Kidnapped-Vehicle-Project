@@ -89,21 +89,36 @@ void ParticleFilter::prediction(double delta_t, double std_pos[], double velocit
 
 }
 
-void ParticleFilter::swap(double *x, double *y)
-{
-    double temp;
-    temp = *x;
-    *x = *y;
-    *y = temp;
-}
 
 void ParticleFilter::dataAssociation(std::vector<LandmarkObs> predicted, std::vector<LandmarkObs>& observations) {
 	// TODO: Find the predicted measurement that is closest to each observed measurement and assign the 
 	//   observed measurement to this particular landmark.
 	// NOTE: this method will NOT be called by the grading code. But you will probably find it useful to 
 	//   implement this method and use it as a helper during the updateWeights phase.
+	vector<LandmarkObs> temp;
 
+	// nearest neighbor data association
+	for(int i=0; i<predicted.size(); i++){
+		double x_pred = predicted[i].x;
+		double y_pred = predicted[i].y;
+		double min_dist = 100000;
 
+		// find nearest observation
+		for(j=0; j<observation.size(); j++){
+			double dx = x_pred - observation[j].x;
+			double dy = y_pred - observation[j].y;
+
+			double dist_ = sqrt(dx*dx + dy*dy);
+
+			if(dist_ < min_dist){
+				min_dist = dist_;
+				double matched_x = observation[j].x;
+				double matched_y = observation[j].y;
+
+			}
+
+		}
+	}
 
 
 }
