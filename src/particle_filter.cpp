@@ -49,7 +49,7 @@ void ParticleFilter::init(double x, double y, double theta, double std[]) {
 		single_particle.x = dist_x(gen);
 		single_particle.y = dist_y(gen);
 		single_particle.theta = dist_theta(gen);
-		single_particle.weight = 1/num_particles;
+		single_particle.weight = 1.0;
 		particles.push_back(single_particle);
 	}
 
@@ -89,13 +89,21 @@ void ParticleFilter::prediction(double delta_t, double std_pos[], double velocit
 
 }
 
+void ParticleFilter::swap(double *x, double *y)
+{
+    double temp;
+    temp = *x;
+    *x = *y;
+    *y = temp;
+}
+
 void ParticleFilter::dataAssociation(std::vector<LandmarkObs> predicted, std::vector<LandmarkObs>& observations) {
 	// TODO: Find the predicted measurement that is closest to each observed measurement and assign the 
 	//   observed measurement to this particular landmark.
 	// NOTE: this method will NOT be called by the grading code. But you will probably find it useful to 
 	//   implement this method and use it as a helper during the updateWeights phase.
 
-	// nearest neighbor data association
+
 
 
 }
@@ -170,15 +178,14 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
 		for(int l=0; l<observations.size(); l++){
 			double e_x = predicted[l].x - observation[l].x;
 			double e_y = predicted[l].y - observation[l].y;
-			mult_gaussian_prob = exp(-1/2*(e_x/std_obsx + e_y/std_obsy));
+			double prob_normalizer = 1/(sqrt(2 * M_PI) * std_obsx * std_obsy);
+			mult_gaussian_prob = prob_normalizer * exp(-1/2*(e_x*e_x/(std_obsx*std_obsx) + e_y*e_y/(std_obsy*std_obsy));
 
 			weight_ *= mult_gaussian_prob;
 		}
 
 		particles[i].weight = weight_;
 		weights.push_back(weight_);
-		
-
 		
 		// clear vector to update next particle.
 		in_range_landmarks_.clear();
