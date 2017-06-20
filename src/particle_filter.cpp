@@ -10,7 +10,6 @@
 #include <iostream>
 #include <numeric>
 #include <math.h> 
-#include <iostream>
 #include <sstream>
 #include <string>
 #include <iterator>
@@ -104,22 +103,28 @@ void ParticleFilter::dataAssociation(std::vector<LandmarkObs> predicted, std::ve
 		double min_dist = 100000;
 
 		// find nearest observation
-		for(j=0; j<observation.size(); j++){
-			double dx = x_pred - observation[j].x;
-			double dy = y_pred - observation[j].y;
+		for(int j=0; j<observations.size(); j++){
+			double dx = x_pred - observations[j].x;
+			double dy = y_pred - observations[j].y;
 
 			double dist_ = sqrt(dx*dx + dy*dy);
+			
+			// temp에 값이 들어갈 공간을 미리 assign 해둔다. 이 작업을 안해두면 element에 접근할 수 없다는 것 같다.
+			temp.push_back(LandmarkObs()); // https://stackoverflow.com/questions/8067338/vector-of-structs-initialization
 
 			if(dist_ < min_dist){
 				min_dist = dist_;
-				double matched_x = observation[j].x;
-				double matched_y = observation[j].y;
-
+				temp[i].x = observations[j].x;
+				temp[i].y = observations[j].y;
+				temp[i].id = observations[j].id;
 			}
 
 		}
+		
 	}
 
+	// predicted와 matching되는 순서로 observations를 swap.
+	observations.swap(temp);
 
 }
 
@@ -139,25 +144,29 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
 	// parse std_landmark[]
 	double std_obsx = std_landmark[0];
 	double std_obsy = std_landmark[1];
-
+	
+	// 사용할 변수들 미리 선언
 	vector<LandmarkObs> in_range_landmarks_;
 	vector<LandmarkObs> predicted;
+
+	// weights initialization
+	weights.clear();
 
 	for(int i=0; i<num_particles; i++){
 		
 
-		for(int l=0; l<map_landmarks.size(); l++){
+		for(int l=0; l<map_landmarks.landmark_list.size(); l++){
 
 			// find landmarks closer than sensor range
-			double dx_ = particles[i].x - map_landmarks[l].x_f;
-			double dy_ = particles[i].y - map_landmarks[l].y_f;
+			double dx_ = particles[i].x - map_landmarks.landmark_list[l].x_f;
+			double dy_ = particles[i].y - map_landmarks.landmark_list[l].y_f;
 			double distance_ = sqrt(dx_*dx_ + dy_*dy_);
 
 			if(distance_ <= sensor_range){
 				LandmarkObs in_range_landmark;
-				in_range_landmark.id = map_landmarks[l].id_i;
-				in_range_landmark.x = map_landmarks[l].x_f;
-				in_range_landmark.y = map_landmarks[l].y_f;
+				in_range_landmark.id = map_landmarks.landmark_list[l].id_i;
+				in_range_landmark.x = map_landmarks.landmark_list[l].x_f;
+				in_range_landmark.y = map_landmarks.landmark_list[l].y_f;
 
 				in_range_landmarks_.push_back(in_range_landmark);
 			}
@@ -171,8 +180,8 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
 			predicted_.id = in_range_landmarks_[k].id;
 			
 			double X_, Y_;
-			X_ = in_range_landmarks_[k].x_f - particles[i].x;
-			Y_ = in_range_landmarks_[k].y_f - particles[i].y;
+			X_ = in_range_landmarks_[k].x - particles[i].x;
+			Y_ = in_range_landmarks_[k].y - particles[i].y;
 			
 			double cc, ss;
 			cc = cos(particles[i].theta);
@@ -185,16 +194,16 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
 		}
 
 		// data assosication
-		dataAssociation(predicted, observations)
+		dataAssociation(predicted, observations);
 
 		// calculate multivariate gaussian probability
 		double mult_gaussian_prob;
 		double weight_ = 1.0;
 		for(int l=0; l<observations.size(); l++){
-			double e_x = predicted[l].x - observation[l].x;
-			double e_y = predicted[l].y - observation[l].y;
+			double e_x = predicted[l].x - observations[l].x;
+			double e_y = predicted[l].y - observations[l].y;
 			double prob_normalizer = 1/(sqrt(2 * M_PI) * std_obsx * std_obsy);
-			mult_gaussian_prob = prob_normalizer * exp(-1/2*(e_x*e_x/(std_obsx*std_obsx) + e_y*e_y/(std_obsy*std_obsy));
+			mult_gaussian_prob = prob_normalizer * exp(-1/2*(e_x*e_x/(std_obsx*std_obsx) + e_y*e_y/(std_obsy*std_obsy)));
 
 			weight_ *= mult_gaussian_prob;
 		}
@@ -212,7 +221,7 @@ void ParticleFilter::resample() {
 	// TODO: Resample particles with replacement with probability proportional to their weight. 
 	// NOTE: You may find std::discrete_distribution helpful here.
 	//   http://en.cppreference.com/w/cpp/numeric/random/discrete_distribution
-
+														   
 }
 
 Particle ParticleFilter::SetAssociations(Particle particle, std::vector<int> associations, std::vector<double> sense_x, std::vector<double> sense_y)
