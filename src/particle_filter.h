@@ -85,7 +85,7 @@ public:
 	 *   observed measurements. 
 	 * @param sensor_range Range [m] of sensor
 	 * @param std_landmark[] Array of dimension 2 [standard deviation of range [m],
-	 *   standard deviation of bearing [rad]]
+	 *   standard deviation of bearing [rad]] -> [x [m], y [m]], standard deviation of landmark measurement.
 	 * @param observations Vector of landmark observations
 	 * @param map Map class containing map landmarks
 	 */
